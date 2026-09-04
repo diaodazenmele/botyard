@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>伯牙智能 4K 提案</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: #000;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+      overscroll-behavior: none;
+    }
+
+    #presentation {
+      width: 100vw;
+      height: 100dvh;
+      overflow-x: hidden;
+      overflow-y: auto;
+      scroll-snap-type: y mandatory;
+      scroll-behavior: smooth;
+      scrollbar-width: none;
+      overscroll-behavior-y: contain;
+      touch-action: pan-y;
+    }
+
+    #presentation::-webkit-scrollbar { display: none; }
+
+    .slide {
+      position: relative;
+      width: 100vw;
+      height: 100dvh;
+      min-height: 100dvh;
+      overflow: hidden;
+      scroll-snap-align: start;
+      scroll-snap-stop: always;
+      background: #000;
+    }
+
+    .slide img,
+    .slide video {
+      display: block;
+      width: auto;
+      height: 100%;
+      max-width: none;
+      margin: 0 auto;
+      user-select: none;
+      -webkit-user-drag: none;
+      pointer-events: none;
+    }
+
+    .cover {
+      display: grid;
+      place-items: center;
+      background: #000;
+    }
+
+    .fullscreen-button {
+      min-width: 12rem;
+      min-height: 3.5rem;
+      padding: 0.9rem 1.8rem;
+      border: 1px solid rgba(255, 255, 255, 0.75);
+      border-radius: 999px;
+      color: #fff;
+      background: transparent;
+      font: inherit;
+      font-size: 1rem;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+      transition: color 160ms ease, background 160ms ease, transform 160ms ease;
+    }
+
+    .fullscreen-button:hover,
+    .fullscreen-button:focus-visible {
+      color: #000;
+      background: #fff;
+      outline: none;
+    }
+
+    .fullscreen-button:active { transform: scale(0.98); }
+
+    .page-jump {
+      position: fixed;
+      right: max(1rem, env(safe-area-inset-right));
+      bottom: max(1rem, env(safe-area-inset-bottom));
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.45rem 0.6rem;
+      color: #fff;
+      background: rgba(0, 0, 0, 0.72);
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      border-radius: 999px;
+      opacity: 0;
+      transition: opacity 160ms ease;
+    }
+
+    .page-jump:hover,
+    .page-jump:focus-within { opacity: 1; }
+
+    .page-jump label {
+      font-size: 0.875rem;
+      white-space: nowrap;
+    }
+
+    .page-jump input {
+      width: 4rem;
+      padding: 0.35rem 0.5rem;
+      border: 0;
+      border-radius: 999px;
+      color: #000;
+      background: #fff;
+      font: inherit;
+      font-size: 1rem;
+      text-align: center;
+      outline: none;
+    }
+
+    .mosaic {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-rows: repeat(2, minmax(0, 1fr));
+      gap: clamp(8px, 1.2vw, 28px);
+      padding: clamp(8px, 1.2vw, 28px);
+    }
+
+    .mosaic video {
+      width: 100%;
+      height: 100%;
+      min-width: 0;
+      min-height: 0;
+      margin: 0;
+      object-fit: cover;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      #presentation { scroll-behavior: auto; }
+    }
+  </style>
+</head>
+<body>
+  <main id="presentation" aria-label="伯牙智能提案"></main>
+  <form class="page-jump" aria-label="跳转到指定页面">
+    <label for="page-number">跳至</label>
+    <input id="page-number" type="number" min="1" max="31" inputmode="numeric" placeholder="页码" aria-label="素材页码">
+  </form>
+
+  <script>
+    const files = [
+      "1.jpg", "2.jpg", "3.jpg", "4.mp4", "5.mp4", "6.mp4",
+      "7.jpg", "8.jpg", "9.jpg", "10.jpg", "11.jpg", "12.jpg",
+      "13.jpg", "14.jpg", "15.mp4", "16.mp4", "17.jpg", "18.jpg",
+      "19.jpg", "20.jpg", "21.jpg", "22.mp4", "23.mp4", "24.jpg",
+      "25.jpg", "26.jpg", "27.jpg", "28.jpg", "29.jpg", "30.jpg"
+    ];
+
+    const presentation = document.querySelector("#presentation");
+    const pageJump = document.querySelector(".page-jump");
+    const pageNumber = document.querySelector("#page-number");
+
+    const cover = document.createElement("section");
+    cover.className = "slide cover";
+    cover.setAttribute("aria-label", "全屏播放入口");
+
+    const fullscreenButton = document.createElement("button");
+    fullscreenButton.className = "fullscreen-button";
+    fullscreenButton.type = "button";
+    fullscreenButton.textContent = "进入全屏播放";
+    cover.appendChild(fullscreenButton);
+    presentation.appendChild(cover);
+
+    files.forEach((file, index) => {
+      const slide = document.createElement("section");
+      slide.className = "slide";
+      slide.setAttribute("aria-label", `第 ${index + 1} 页，共 ${files.length} 页素材`);
+
+      const isVideo = file.toLowerCase().endsWith(".mp4");
+      const media = document.createElement(isVideo ? "video" : "img");
+      media.src = encodeURI(file);
+      media.setAttribute("aria-label", file);
+
+      if (isVideo) {
+        media.muted = true;
+        media.loop = false;
+        media.playsInline = true;
+        media.preload = index < 2 ? "auto" : "metadata";
+      } else {
+        media.alt = file;
+        media.loading = index < 2 ? "eager" : "lazy";
+        media.decoding = "async";
+      }
+
+      slide.appendChild(media);
+      presentation.appendChild(slide);
+    });
+
+    const mosaic = document.createElement("section");
+    mosaic.className = "slide mosaic";
+    mosaic.setAttribute("aria-label", "第 31 页，四宫格循环视频");
+
+    ["4.mp4", "15.mp4", "15.1.mp4", "23.mp4"].forEach(file => {
+      const video = document.createElement("video");
+      video.src = encodeURI(file);
+      video.muted = true;
+      video.loop = true;
+      video.playsInline = true;
+      video.preload = "metadata";
+      video.setAttribute("aria-label", file);
+      mosaic.appendChild(video);
+    });
+
+    presentation.appendChild(mosaic);
+
+    const slides = [...document.querySelectorAll(".slide")];
+    let current = 0;
+    let locked = false;
+    let activeMediaIndex = null;
+
+    function goTo(index) {
+      const next = Math.max(0, Math.min(slides.length - 1, index));
+      current = next;
+      slides[next].scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function syncMedia(index) {
+      if (activeMediaIndex === index) return;
+
+      slides.forEach((slide, i) => {
+        slide.querySelectorAll("video").forEach(video => {
+          video.pause();
+          video.currentTime = 0;
+          if (i === index) video.play().catch(() => {});
+        });
+      });
+
+      activeMediaIndex = index;
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+      const visible = entries
+        .filter(entry => entry.isIntersecting)
+        .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+      if (!visible) return;
+      current = slides.indexOf(visible.target);
+      syncMedia(current);
+    }, { root: presentation, threshold: [0.55, 0.9] });
+
+    slides.forEach(slide => observer.observe(slide));
+
+    presentation.addEventListener("wheel", (event) => {
+      event.preventDefault();
+      if (locked || Math.abs(event.deltaY) < 4) return;
+      locked = true;
+      goTo(current + (event.deltaY > 0 ? 1 : -1));
+      window.setTimeout(() => { locked = false; }, 650);
+    }, { passive: false });
+
+    presentation.addEventListener("click", (event) => {
+      if (event.button !== 0) return;
+      goTo(current + 1);
+    });
+
+    fullscreenButton.addEventListener("click", async (event) => {
+      event.stopPropagation();
+      try {
+        if (!document.fullscreenElement) await document.documentElement.requestFullscreen();
+      } catch (_) {}
+      goTo(1);
+    });
+
+    pageJump.addEventListener("click", event => event.stopPropagation());
+    pageJump.addEventListener("keydown", event => event.stopPropagation());
+    pageJump.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const page = Number.parseInt(pageNumber.value, 10);
+      if (!Number.isInteger(page) || page < 1 || page > files.length + 1) {
+        pageNumber.select();
+        return;
+      }
+      goTo(page);
+      pageNumber.blur();
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (["ArrowDown", "ArrowRight", "PageDown", " "].includes(event.key)) {
+        event.preventDefault();
+        goTo(current + 1);
+      } else if (["ArrowUp", "ArrowLeft", "PageUp"].includes(event.key)) {
+        event.preventDefault();
+        goTo(current - 1);
+      } else if (event.key === "Home") {
+        event.preventDefault();
+        goTo(0);
+      } else if (event.key === "End") {
+        event.preventDefault();
+        goTo(slides.length - 1);
+      }
+    });
+
+    window.addEventListener("resize", () => goTo(current));
+    syncMedia(0);
+  </script>
+</body>
+</html>
