@@ -164,6 +164,16 @@
       "25.jpg", "26.jpg", "27.jpg", "28.jpg", "29.jpg", "30.jpg"
     ];
 
+    const onlineVideoBase = "https://media.githubusercontent.com/media/diaodazenmele/botyard/main/";
+
+    function mediaSource(file) {
+      const isVideo = file.toLowerCase().endsWith(".mp4");
+      if (isVideo && location.protocol !== "file:") {
+        return onlineVideoBase + encodeURIComponent(file);
+      }
+      return encodeURI(file);
+    }
+
     const presentation = document.querySelector("#presentation");
     const pageJump = document.querySelector(".page-jump");
     const pageNumber = document.querySelector("#page-number");
@@ -186,7 +196,7 @@
 
       const isVideo = file.toLowerCase().endsWith(".mp4");
       const media = document.createElement(isVideo ? "video" : "img");
-      media.src = encodeURI(file);
+      media.src = mediaSource(file);
       media.setAttribute("aria-label", file);
 
       if (isVideo) {
@@ -210,7 +220,7 @@
 
     ["4.mp4", "15.mp4", "15.1.mp4", "23.mp4"].forEach(file => {
       const video = document.createElement("video");
-      video.src = encodeURI(file);
+      video.src = mediaSource(file);
       video.muted = true;
       video.loop = true;
       video.playsInline = true;
