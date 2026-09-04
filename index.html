@@ -164,12 +164,10 @@
       "25.jpg", "26.jpg", "27.jpg", "28.jpg", "29.jpg", "30.jpg"
     ];
 
-    const onlineVideoBase = "https://media.githubusercontent.com/media/diaodazenmele/botyard/main/";
-
     function mediaSource(file) {
       const isVideo = file.toLowerCase().endsWith(".mp4");
       if (isVideo && location.protocol !== "file:") {
-        return onlineVideoBase + encodeURIComponent(file);
+        return "web-video/" + encodeURIComponent(file);
       }
       return encodeURI(file);
     }
